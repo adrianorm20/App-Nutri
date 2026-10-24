@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-ai';
 
 // Interface das opções de refeições por dia
 export interface DiaPlano {
@@ -16,8 +17,8 @@ export interface PlanoAlimentarSemanal {
   plano_semanal: DiaPlano[];
 }
 
-export default async function handler(req: any, res: any) {
-  // Configura CORS caso necessário
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Configura CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -37,23 +38,23 @@ export default async function handler(req: any, res: any) {
   const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    console.error('GOOGLE_API_KEY não configurada no ambiente.');
+    console.error('GOOGLE_API_KEY não configurada no ambiente da Vercel.');
     return res.status(500).json({
-      error: 'Chave de API do Google Gemini não configurada no servidor (GOOGLE_API_KEY).',
+      error: 'Chave da API do Gemini não configurada no servidor (GOOGLE_API_KEY). Cadastre nas Environment Variables da Vercel.',
     });
   }
 
   try {
-    const { dadosPaciente } = req.body || {};
+    const { dadosPaciente } = (req.body as any) || {};
 
     if (!dadosPaciente) {
-      return res.status(400).json({ error: 'Dados do paciente não informados.' });
+      return res.status(400).json({ error: 'Dados do paciente não informados na requisição.' });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Schema rígido para garantir 100% que o Gemini retorne o JSON esperado
-    const schema = {
+    // Schema rigoroso para Structured Outputs (tipo Schema do SDK)
+    const schema: Schema = {
       type: SchemaType.OBJECT,
       properties: {
         plano_semanal: {
@@ -153,21 +154,21 @@ O formato do JSON retornado deve seguir exatamente esta estrutura:
     let jsonParsed: PlanoAlimentarSemanal;
     try {
       jsonParsed = JSON.parse(responseText);
-    } catch (parseErr) {
-      // Limpeza de segurança caso retorne com crases markdown
-      const cleanText = responseText.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+    } catch {
+      // Limpeza de segurança caso retorne com crases ou formatação residual
+      const cleanText = responseText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
       jsonParsed = JSON.parse(cleanText);
     }
 
     if (!jsonParsed || !Array.isArray(jsonParsed.plano_semanal)) {
-      throw new Error('A resposta gerada pelo modelo não possui a chave plano_semanal esperada.');
+      throw new Error('A resposta gerada pelo modelo não possui o array plano_semanal.');
     }
 
     return res.status(200).json(jsonParsed);
   } catch (error: any) {
-    console.error('Erro ao gerar plano alimentar com Gemini:', error);
+    console.error('Erro na Serverless Function /api/gerar-plano:', error);
     return res.status(500).json({
-      error: error.message || 'Falha ao processar e gerar o plano alimentar via IA.',
+      error: error?.message || 'Falha ao processar e gerar o plano alimentar via IA.',
     });
   }
 }

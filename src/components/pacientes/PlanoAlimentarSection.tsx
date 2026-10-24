@@ -203,10 +203,10 @@ export const PlanoAlimentarSection: React.FC<PlanoAlimentarSectionProps> = ({
       showToast('Plano alimentar gerado com sucesso pela IA! Você pode editar as opções abaixo.', 'success');
     } catch (err: any) {
       console.error('Erro na chamada da API do Gemini:', err);
-      showToast(
-        'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?',
-        'warning'
-      );
+      const msg = err?.message && !err.message.includes('Failed to fetch')
+        ? err.message
+        : 'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?';
+      showToast(msg, 'warning');
     } finally {
       clearTimeout(stepTimer1);
       clearTimeout(stepTimer2);
