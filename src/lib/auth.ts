@@ -1,6 +1,6 @@
 import { syncNutricionista } from './neon';
 
-const AUTH_URL = import.meta.env.VITE_NEON_AUTH_URL || 'https://ep-quiet-rice-b6upjywk.neonauth.c-2.sa-east-1.aws.neon.tech/neondb/auth';
+const AUTH_URL = import.meta.env.VITE_NEON_AUTH_URL || '';
 const SESSION_KEY = 'nutriadriano_auth_session';
 
 export interface AuthUser {
