@@ -215,3 +215,35 @@ export async function fetchPlanosByPaciente(pacienteId: string): Promise<PlanoAl
     return [];
   }
 }
+
+/**
+ * Salva um novo plano alimentar no banco de dados Neon
+ */
+export async function createPlanoAlimentar(pacienteId: string, conteudo: any): Promise<PlanoAlimentarItem> {
+  if (!sql) {
+    throw new Error('Banco de dados não configurado.');
+  }
+
+  const result = await sql`
+    INSERT INTO planos_alimentares (
+      paciente_id,
+      conteudo
+    ) VALUES (
+      ${pacienteId},
+      ${JSON.stringify(conteudo)}::jsonb
+    )
+    RETURNING id, paciente_id, conteudo, created_at
+  `;
+
+  if (!result || result.length === 0) {
+    throw new Error('Falha ao salvar o plano alimentar no banco de dados.');
+  }
+
+  const r = result[0];
+  return {
+    id: r.id,
+    paciente_id: r.paciente_id,
+    conteudo: r.conteudo,
+    created_at: typeof r.created_at === 'string' ? r.created_at : new Date(r.created_at).toISOString(),
+  };
+}

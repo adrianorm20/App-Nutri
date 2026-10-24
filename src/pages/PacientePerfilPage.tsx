@@ -21,6 +21,7 @@ import {
 } from '../lib/consultas';
 import { WeightEvolutionChart } from '../components/pacientes/WeightEvolutionChart';
 import { NovaConsultaModal } from '../components/pacientes/NovaConsultaModal';
+import { PlanoAlimentarSection } from '../components/pacientes/PlanoAlimentarSection';
 import {
   ArrowLeft,
   Calendar,
@@ -31,8 +32,6 @@ import {
   Plus,
   Save,
   CheckCircle2,
-  FileText,
-  Sparkles,
   UserCheck,
   Menu,
   X,
@@ -139,7 +138,6 @@ export const PacientePerfilPage: React.FC = () => {
 
   // Planos Alimentares
   const [planos, setPlanos] = useState<PlanoAlimentarItem[]>([]);
-  const [selectedPlano, setSelectedPlano] = useState<PlanoAlimentarItem | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -1126,94 +1124,17 @@ export const PacientePerfilPage: React.FC = () => {
               )}
 
               {/* ========================================================= */}
-              {/* SEÇÃO 3: PLANOS ALIMENTARES */}
+              {/* SEÇÃO 3: PLANOS ALIMENTARES COM IA GEMINI */}
               {/* ========================================================= */}
               {activeSection === 'planos' && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900">Planos Alimentares Personalizados</h3>
-                      <p className="text-xs text-slate-500">Cardápios, metas e prescrições calculadas para o paciente</p>
-                    </div>
-
-                    {/* Botão Gerar Plano Alimentar (visível conforme especificado) */}
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-md shadow-emerald-600/20 hover:bg-emerald-700 transition-all self-start sm:self-auto cursor-pointer"
-                      onClick={() => {
-                        alert('A geração assistida por IA de plano alimentar será configurada no próximo passo!');
-                      }}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      Gerar Plano Alimentar
-                    </button>
-                  </div>
-
-                  {planos.length === 0 ? (
-                    <div className="p-16 text-center space-y-3 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
-                      <Utensils className="w-10 h-10 text-slate-400 mx-auto" />
-                      <h4 className="text-base font-bold text-slate-700">Nenhum plano alimentar gerado ainda</h4>
-                      <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                        Quando você gerar uma dieta ou plano alimentar para este paciente, ele ficará disponível aqui com acesso ao cardápio completo.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {/* Lista do Histórico */}
-                      <div className="space-y-3 md:col-span-1 border-r border-slate-100 pr-4">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                          Histórico de Planos
-                        </span>
-                        {planos.map((p) => {
-                          const isSelected = selectedPlano?.id === p.id;
-                          return (
-                            <div
-                              key={p.id}
-                              onClick={() => setSelectedPlano(p)}
-                              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                                isSelected
-                                  ? 'bg-emerald-50 border-emerald-300 shadow-xs'
-                                  : 'bg-white border-slate-200/80 hover:border-slate-300'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-xs text-slate-900">
-                                  Plano de {formatDate(p.created_at)}
-                                </span>
-                                <FileText className={`w-4 h-4 ${isSelected ? 'text-emerald-600' : 'text-slate-400'}`} />
-                              </div>
-                              <p className="text-[11px] text-slate-500 mt-1">
-                                Clique para visualizar os detalhes
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Visualização do Conteúdo Selecionado */}
-                      <div className="md:col-span-2">
-                        {selectedPlano ? (
-                          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                              <h4 className="font-bold text-sm text-slate-900">
-                                Conteúdo do Plano ({formatDate(selectedPlano.created_at)})
-                              </h4>
-                            </div>
-                            <pre className="text-xs text-slate-800 bg-white p-4 rounded-xl border border-slate-200 overflow-x-auto whitespace-pre-wrap font-sans">
-                              {typeof selectedPlano.conteudo === 'string'
-                                ? selectedPlano.conteudo
-                                : JSON.stringify(selectedPlano.conteudo, null, 2)}
-                            </pre>
-                          </div>
-                        ) : (
-                          <div className="h-48 flex items-center justify-center text-xs text-slate-400 bg-slate-50/50 rounded-2xl border border-slate-100">
-                            Selecione um plano do histórico para visualizar seu conteúdo completo
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <PlanoAlimentarSection
+                  pacienteId={id!}
+                  pacienteData={paciente}
+                  planos={planos}
+                  onPlanoSaved={(novoPlano) => {
+                    setPlanos((prev) => [novoPlano, ...prev]);
+                  }}
+                />
               )}
             </div>
           )}
