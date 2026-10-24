@@ -54,7 +54,10 @@ export const RegisterForm: React.FC = () => {
         email: email.trim(),
         password,
       });
-      navigate('/dashboard', { replace: true });
+      navigate('/login', { 
+        replace: true,
+        state: { message: 'Conta criada com sucesso! Faça login para continuar.' }
+      });
     } catch (err: any) {
       setErrorMessage(err.message || 'Erro ao realizar cadastro. Tente novamente.');
     } finally {

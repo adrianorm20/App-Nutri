@@ -54,9 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (data: SignUpData) => {
     setError(null);
     try {
-      const result = await authService.signUp(data);
-      setSession(result.session);
-      setUser(result.user);
+      await authService.signUp(data);
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta.');
       throw err;

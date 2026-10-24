@@ -135,7 +135,7 @@ class AuthService {
         token: token,
       };
 
-      this.saveSession(session);
+      // Não salvamos a sessão local no cadastro para que o usuário faça login manualmente
       return { user: authUser, session };
     } catch (err: any) {
       console.error('Erro no cadastro:', err);
