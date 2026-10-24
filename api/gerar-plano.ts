@@ -35,12 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Método não permitido. Utilize POST.' });
   }
 
-  const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
   if (!apiKey) {
-    console.error('GOOGLE_API_KEY não configurada no ambiente da Vercel.');
+    console.error('GEMINI_API_KEY não configurada no ambiente.');
     return res.status(500).json({
-      error: 'Chave da API do Gemini não configurada no servidor (GOOGLE_API_KEY). Cadastre nas Environment Variables da Vercel.',
+      error: 'Chave da API do Gemini não configurada no servidor (GEMINI_API_KEY). Cadastre no .env.local e nas Environment Variables da Vercel.',
     });
   }
 
@@ -106,14 +106,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       required: ['plano_semanal'],
     };
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: schema,
-        temperature: 0.7,
-      },
-    });
+    // Suporte ao modelo configurado ou os modelos Flash de alta performance do Google
+    const requestedModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+
+    let model;
+    try {
+      model = genAI.getGenerativeModel({
+        model: requestedModel,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: schema,
+          temperature: 0.7,
+        },
+      });
+    } catch {
+      model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: schema,
+          temperature: 0.7,
+        },
+      });
+    }
 
     const dadosPacienteFormatados = typeof dadosPaciente === 'string'
       ? dadosPaciente
