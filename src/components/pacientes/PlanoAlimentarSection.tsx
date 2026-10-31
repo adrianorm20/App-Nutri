@@ -18,6 +18,7 @@ import {
   createPlanoAlimentar,
   type PlanoAlimentarItem
 } from '../../lib/consultas';
+import { gerarPlanoComGemini } from '../../lib/gemini';
 
 export interface DiaPlano {
   dia: string;
@@ -173,24 +174,36 @@ export const PlanoAlimentarSection: React.FC<PlanoAlimentarSectionProps> = ({
         observacoes_clinicas: pacienteData.observacoes,
       };
 
-      const response = await fetch('/api/gerar-plano', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ dadosPaciente: payloadPaciente }),
-      });
+      let parsed: PlanoAlimentarSemanal;
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `Falha no serviço (${response.status})`);
-      }
+      // Tenta primeiro via endpoint de API (produção Vercel)
+      try {
+        const response = await fetch('/api/gerar-plano', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ dadosPaciente: payloadPaciente }),
+        });
 
-      const data = await response.json();
-
-      let parsed: PlanoAlimentarSemanal = data;
-      if (typeof data === 'string') {
-        parsed = JSON.parse(data);
+        if (response.ok) {
+          const data = await response.json();
+          parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        } else if (response.status === 404) {
+          // Em ambiente local do Vite (onde a Vercel serverless function não está rodando diretamente),
+          // executa a geração direta pelo Gemini SDK com a chave local
+          parsed = await gerarPlanoComGemini(payloadPaciente);
+        } else {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || `Falha no serviço (${response.status})`);
+        }
+      } catch (endpointError: any) {
+        // Se a chamada para /api falhar ou retornar erro, tenta fallback direto com Gemini SDK
+        if (endpointError?.message?.includes('404') || endpointError?.message?.includes('Failed to fetch')) {
+          parsed = await gerarPlanoComGemini(payloadPaciente);
+        } else {
+          throw endpointError;
+        }
       }
 
       if (!parsed || !Array.isArray(parsed.plano_semanal) || parsed.plano_semanal.length === 0) {
@@ -349,17 +362,17 @@ export const PlanoAlimentarSection: React.FC<PlanoAlimentarSectionProps> = ({
               type="button"
               onClick={handleGerarComIA}
               disabled={isGenerating}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 text-white font-bold text-sm shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700 active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-sm shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700 active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  Gerando com IA...
+                  <span>Gerando com IA...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-emerald-200" />
-                  ✨ Gerar Plano com IA
+                  <Sparkles className="w-4 h-4 text-emerald-100" />
+                  <span>Gerar Plano com IA</span>
                 </>
               )}
             </button>

@@ -36,3 +36,5 @@ dist-ssr
 # Temporary / testing files
 scratch/
 *.cjs.backup
+_prompts
+

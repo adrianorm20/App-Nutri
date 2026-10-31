@@ -107,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     // Suporte ao modelo configurado ou os modelos Flash de alta performance do Google
-    const requestedModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    const requestedModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 
     let model;
     try {
@@ -121,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     } catch {
       model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3.5-flash-lite',
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: schema,
